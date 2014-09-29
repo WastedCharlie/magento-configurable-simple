@@ -47,12 +47,16 @@ class OrganicInternet_SimpleConfigurableProducts_Catalog_Model_Product_Type_Conf
 */
 
 		#check if it's a 'Wishlist buy request', if so return the price of the particular option added to the wishlist
+		/* Regretably, this results in a Magento Native Configurable product being added to the cart, but at least it gets the right price. */
 		$buyRequest = $product->getCustomOption('info_buyRequest');
-		if ($buyRequest) {
-			$options = $product->getCustomOption('info_buyRequest')->getItem()->getOptionByCode('simple_product')->getData();
-			$productId = $options["product_id"];
-			$childProduct = Mage::getModel('catalog/product')->load($productId);
-            return $childProduct->getPrice();
+		if ($buyRequest){
+			$options = $product->getCustomOption('info_buyRequest')->getItem()->getOptionByCode('simple_product');
+			if($options !== null){ // Check for unconfigured product.  If unconfigured then this function will inevitably return false and the user should be prompted to conigure at the product view page.
+				$options = $options->getData();
+				$productId = $options["product_id"];
+				$childProduct = Mage::getModel('catalog/product')->load($productId);
+				return $childProduct->getFinalPrice(); // Allow for special pricing.
+			}
 		}
 		
         $childProduct = $this->getChildProductWithLowestPrice($product, "finalPrice");
